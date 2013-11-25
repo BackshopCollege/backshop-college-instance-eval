@@ -14,13 +14,19 @@ class FullText
   end
 
   def search(&proc)
-    proc.call(self)
+    @before_change_self = eval("self", proc.binding)
+    (proc.arity > 0) ? proc.call(self) : self.instance_eval(&proc)
     @datasource.select { |val| val[:name] =~ Regexp.new(text, 'i') }
   end
 
   def text(value = nil)
     return @text || "what" unless value
     @text = value 
+  end
+
+  def method_missing(method, *args, &block)
+    block = (proc {} )unless block_given?
+    @before_change_self.send(method, *args, &block)
   end
 
 end
